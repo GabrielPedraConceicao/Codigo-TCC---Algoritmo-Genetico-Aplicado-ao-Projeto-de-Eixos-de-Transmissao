@@ -433,7 +433,7 @@ def calcular_Ieq(df):
           'Comprimento S1' a 'Comprimento S6', e 'E (GPa)'.
 
     Retorno:
-    - DataFrame original com nova coluna 'Ieq (m⁴)'.
+    - DataFrame original com nova coluna 'Ieq'.
     """
 
     mm4_to_m4 = 1e-12
@@ -452,7 +452,7 @@ def calcular_Ieq(df):
         Ieq_list.append(Ieq)
 
     df = df.copy()
-    df['Ieq (m^4)'] = Ieq_list
+    df['Ieq'] = Ieq_list
     return df
 
 
@@ -492,7 +492,7 @@ def criterio_von_mises(FS_estatico, M, T, d, limite_escoamento):
 def avaliacao_restritiva(df_input, MomentosS3, MomentosS4, TorqueMaxPartida, TorqueOperacao, FSfadiga, FSestatico, r):
     """
     Função para avaliar se os indivíduos no DataFrame atendem às restrições do critério de Goodman,
-    do critério de Von Mises e ao critério de chavetas.
+    do critério de Von Mises e ao critério de chavetas (viabilidade de utilização de 1 ou 2 chavetas na união eixo-cubo).
     
     Parâmetros:
     - df_input: DataFrame com as soluções.
@@ -648,7 +648,7 @@ def checar_restricao_deflexao(Ematerial, Ieixo, comprimentoEixo, pontoMancal1, p
     deflexao_total = max(deflexao_max_xy, deflexao_max_xz)
     angulo_total = max(angulo_max_xy, angulo_max_xz)
 
-    if deflexao_total > 0.05 or angulo_total > 4:  #FLEXA MÁXIMA DE 0,5mm e angulo máximo de 5'
+    if deflexao_total > 0.05 or angulo_total > 4:  #FLEXA MÁXIMA DE 0,05mm e angulo máximo de 4'
         return "Não Atende"
     else:
         return "Atende"
@@ -665,7 +665,7 @@ def filtrar_por_deflexao(df):
 
     def verificar(row):
         Ematerial = row['E (GPa)'] * 1e9
-        Ieixo = row['Ieq (m^4)']
+        Ieixo = row['Ieq']
         comprimentoEixo = sum([row[f'Comprimento S{i}'] for i in range(1, 7)]) / 1000
         pontoMancal1 = 0.058  #local fixo posição mancal 1 (S3)
         pontoMancal2 = 0.116  #local fixo posição mancal 1 (S6)
@@ -965,14 +965,11 @@ def nsga2_otimizacao(df_geracao_inicial,
     return populacao
 
 
-primeiro_teste_NSGA2 = nsga2_otimizacao(df_GeracaoInicial, fEntrada, fSaida, dicMateriais, listaMomentosS3, listaMomentosS4, torquePartidaMax, torqueOperaçao, 3, 2, 1)
-
-
 #GERAÇÃO DE OUTPUTS
 for i in range(1, 11):
     df_GeracaoInicial = GeracaoInicial(fEntrada, fSaida, dicMateriais, 3)
-    primeiro_teste_NSGA2 = nsga2_otimizacao(df_GeracaoInicial, fEntrada, fSaida, dicMateriais, listaMomentosS3, listaMomentosS4, torquePartidaMax, torqueOperaçao, 3, 2, 1)
-    primeiro_teste_NSGA2['Iteração'] = i'
-    primeiro_teste_NSGA2.to_csv(rf'sua_paista_saída_teração_{i}.csv', index=False)  #substitua o prefixo sua_paista_saída_" pelo path destino
+    tab_NSGA2 = nsga2_otimizacao(df_GeracaoInicial, fEntrada, fSaida, dicMateriais, listaMomentosS3, listaMomentosS4, torquePartidaMax, torqueOperaçao, 3, 2, 1)
+    tab_NSGA2['Iteração'] = i'
+    tab_NSGA2.to_csv(rf'sua_paista_saída_teração_{i}.csv', index=False)  # Substitua o prefixo sua_paista_saída_" pelo path destino.
 
 
